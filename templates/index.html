@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Sentiment Analyzer</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+    <h1>🤖 AI Sentiment Analyzer</h1>
+
+    <button onclick="toggleDarkMode()">🌙 Toggle Mode</button>
+
+    <form method="POST">
+        <textarea id="text" name="text" placeholder="Type something..."></textarea>
+
+        <p id="charCount">0 characters</p>
+
+        <div>
+            <button type="submit">Analyze</button>
+            <button type="button" onclick="clearText()">Clear</button>
+        </div>
+    </form>
+
+    {% if result %}
+    <div class="output-box">
+        <h2 style="color: {{color}};">
+            {{ result.upper() }} {{ emoji }}
+        </h2>
+
+        <div class="progress-bar">
+            <div class="progress" style="width: {{confidence}}%;"></div>
+        </div>
+
+        <p>Confidence: {{ confidence }}%</p>
+
+        <button onclick="speakText()">🔊 Speak</button>
+    </div>
+    {% endif %}
+
+    <a href="/download"><button>⬇ Download History</button></a>
+
+    <div class="history">
+        <h3>History</h3>
+        {% for item in history %}
+        <p>{{ item.text }} → {{ item.result }} ({{ item.confidence }}%)</p>
+        {% endfor %}
+    </div>
+
+    <canvas id="chart"></canvas>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const textarea = document.getElementById("text");
+const count = document.getElementById("charCount");
+
+textarea.addEventListener("input", () => {
+    count.textContent = textarea.value.length + " characters";
+});
+
+function clearText() {
+    textarea.value = "";
+    count.textContent = "0 characters";
+}
+
+function toggleDarkMode() {
+    document.body.classList.toggle("dark");
+}
+
+function speakText() {
+    let text = "{{ result }} sentiment with confidence {{ confidence }} percent";
+    let speech = new SpeechSynthesisUtterance(text);
+    speechSynthesis.speak(speech);
+}
+
+// Chart
+let data = {{ history|tojson }};
+let positive = data.filter(x => x.result === "positive").length;
+let negative = data.filter(x => x.result === "negative").length;
+
+new Chart(document.getElementById("chart"), {
+    type: "doughnut",
+    data: {
+        labels: ["Positive", "Negative"],
+        datasets: [{
+            data: [positive, negative]
+        }]
+    }
+});
+</script>
+
+</body>
+</html>
